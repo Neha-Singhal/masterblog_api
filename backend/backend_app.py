@@ -32,6 +32,10 @@ def get_next_id():
         return 1
     return max(post["id"] for post in POSTS) + 1
 
+@app.route("/")
+def home():
+    return "Welcome to Masterblog API! Visit /api/posts to see blog posts."
+
 # GET: Fetch all blog posts with optional sorting
 @app.route('/api/posts', methods=['GET'])
 def get_posts():
@@ -107,15 +111,23 @@ def update_post(post_id):
 # GET: Search for posts (by title or content)
 @app.route('/api/posts/search', methods=['GET'])
 def search_post():
-    title_query = request.args.get("title", "").lower()
-    content_query = request.args.get("content", "").lower()
+    title_query = request.args.get("title", "").strip().lower()
+    content_query = request.args.get("content", "").strip().lower()
+
+    # Check if at least one search parameter is provided
+    if not title_query and not content_query:
+        return jsonify({"error": "Please provide a search query (title or content)."}), 400
 
     filtered_posts = [
         post for post in POSTS
-        if (title_query in post["title"].lower() or content_query in post["content"].lower())
+        if (title_query and title_query in post["title"].lower()) or
+           (content_query and content_query in post["content"].lower())
     ]
+    if not filtered_posts:
+        return jsonify({"message": "No matching posts found."}), 404
+
     return jsonify(filtered_posts), 200
 
-# Run the Flask server
+    # Run the Flask server
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5002, debug=True)
+    app.run(host="0.0.0.0",port=5002, debug=True)
